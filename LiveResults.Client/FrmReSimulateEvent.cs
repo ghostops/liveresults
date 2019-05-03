@@ -26,10 +26,11 @@ namespace LiveResults.Client
             public DateTime occurs;
             public ResultStruct Data;
             public Runner runner;
+            public int RunnerStatus;
 
             public override string ToString()
             {
-                return occurs.ToString("HH:mm:ss") + ": CN-" + Data.ControlCode + ", R-" + runner.Name;
+                return occurs.ToString("HH:mm:ss") + ": CN-" + Data.ControlCode + ", R-" + runner.Name + "(" + runner.Class + ")";
             }
         }
         private void button1_Click(object sender, EventArgs e)
@@ -58,9 +59,10 @@ namespace LiveResults.Client
                         Data = new ResultStruct
                         {
                             ControlCode = splitTime.Control,
-                            Time = splitTime.Time
+                            Time = splitTime.Time,
                         },
-                        runner = runner
+                        runner = runner,
+                        RunnerStatus = 0
                     });
                 }
 
@@ -75,7 +77,8 @@ namespace LiveResults.Client
                             ControlCode = 1000,
                             Time = runner.Time
                         },
-                        runner = runner
+                        runner = runner,
+                        RunnerStatus = runner.StageStatus
                     });
                 }
 
@@ -85,6 +88,8 @@ namespace LiveResults.Client
                 listBox1.DataSource = eventsToSimulate.Take(20).ToList();
                 lblTime.Text = m_StartTime.ToString("HH:mm:ss");
             }
+
+            m_client.SetCompetitionId(int.Parse(textBox2.Text));
 
         }
 
@@ -99,13 +104,15 @@ namespace LiveResults.Client
         private void timer1_Tick(object sender, EventArgs e)
         {
             m_CurrentTime = m_CurrentTime.AddSeconds(1);
+            //if (m_CurrentTime. > 0)
+            //    m_CurrentTime = m_CurrentTime.AddMilliseconds(-1 * m_CurrentTime.Millisecond);
             lblTime.Text = m_CurrentTime.ToString("HH:mm:ss");
             while (eventsToSimulate.Count > 0 && (eventsToSimulate[0]).occurs == m_CurrentTime)
             {
                 var ev = eventsToSimulate[0];
                 if (ev.Data.ControlCode == 1000)
                 {
-                    m_client.SetRunnerResult(ev.runner.ID, ev.Data.Time, 0);
+                    m_client.SetRunnerResult(ev.runner.ID, ev.Data.Time,ev.RunnerStatus);
                 }
                 else
                 {
@@ -154,6 +161,31 @@ namespace LiveResults.Client
                 frm.Show();
 #endif
             }
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+            textBox2.Text = textBox1.Text;
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            while (eventsToSimulate.Count > 0 && (eventsToSimulate[0]).occurs < DateTime.Now)
+            {
+                var ev = eventsToSimulate[0];
+                if (ev.Data.ControlCode == 1000)
+                {
+                    m_client.SetRunnerResult(ev.runner.ID, ev.Data.Time, ev.RunnerStatus);
+                }
+                else
+                {
+                    m_client.SetRunnerSplit(ev.runner.ID, ev.Data.ControlCode, ev.Data.Time);
+                }
+                eventsToSimulate.RemoveAt(0);
+                listBox1.DataSource = eventsToSimulate.Take(20).ToList();
+            }
+            m_CurrentTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, DateTime.Now.Hour, DateTime.Now.Minute,
+                DateTime.Now.Second);
         }
     }
 }

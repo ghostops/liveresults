@@ -184,7 +184,7 @@ namespace LiveResults.Model
         }
         public List<SplitTime> GetUpdatedSplitTimes()
         {
-            return m_splitTimes.Values.Where(t => t.Updated).ToList();
+            return SplitTimes.Where(t => t.Updated).ToList();
         }
 
         public bool HasStartTimeChanged(int starttime)
@@ -250,6 +250,13 @@ namespace LiveResults.Model
                 return m_status;
             }
         }
+        public int StageStatus
+        {
+            get
+            {
+                return m_status;
+            }
+        }
 
         public int StartTime
         {
@@ -262,7 +269,6 @@ namespace LiveResults.Model
         public bool HasSplitChanged(int controlCode, int time)
         {
             return !(m_splitTimes.ContainsKey(controlCode) && m_splitTimes[controlCode].Time == time);
-            
         }
 
         public void SetSplitTime(int controlCode, int time)
@@ -330,6 +336,8 @@ namespace LiveResults.Model
             m_status = 0;
             if (m_splitTimes != null)
                 m_splitTimes.Clear();
+
+            RunnerUpdated = true;
         }
     }
 
